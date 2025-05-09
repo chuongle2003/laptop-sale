@@ -1,6 +1,6 @@
 <?php
 if (isset($_GET['pagenumber'])) {
-    $page = $_GET['pagenumber'];
+    $page = intval($_GET['pagenumber']);
 } else {
     $page = 1;
 }
@@ -23,43 +23,76 @@ if (isset($_GET['pricesort']) && $_GET['pricesort'] == 'asc') {
 }
 
 if (isset($_GET['pricefrom']) && isset($_GET['priceto'])) {
-    $price_from = $_GET['pricefrom'];
-    $price_to = $_GET['priceto'];
-    $url_price = "&pricefrom=" . $price_from . "&priceto" . $price_to;
+    $price_from = floatval($_GET['pricefrom']);
+    $price_to = floatval($_GET['priceto']);
+    $url_price = "&pricefrom=" . $price_from . "&priceto=" . $price_to;
+
+    // Xây dựng điều kiện WHERE cho SQL
+    $where_conditions = "product_status = 1 AND product_quantity > 0 AND product_price > $price_from AND product_price < $price_to";
+
+    // Xử lý URL tham số và bảo mật dữ liệu đầu vào
+    $url_category = '';
+    $url_brand = '';
+
     if (isset($_GET['category_id'])) {
-        $url_category = '&category_id=' . $_GET['category_id'];
-        $url_brand = '';
-        $sql_product_list = "SELECT * FROM product JOIN category ON product.product_category = category.category_id WHERE product.product_category = '" . $_GET['category_id'] . "' AND product_price > $price_from AND product_price < $price_to AND product_status = 1 AND product_quantity > 0 " . $sortby . " LIMIT $begin,9";
-        $query_product_list = mysqli_query($mysqli, $sql_product_list);
-    } elseif (isset($_GET['brand_id'])) {
-        $url_category = '';
-        $url_brand = '&brand_id=' . $_GET['brand_id'];
-        $sql_product_list = "SELECT * FROM product JOIN brand ON product.product_brand = brand.brand_id WHERE product.product_brand = '" . $_GET['brand_id'] . "' AND product_price > $price_from AND product_price < $price_to AND product_status = 1 AND product_quantity > 0 " . $sortby . " LIMIT $begin,9";
-        $query_product_list = mysqli_query($mysqli, $sql_product_list);
-    } else {
-        $url_brand = '';
-        $url_category = '';
-        $sql_product_list = "SELECT * FROM product WHERE product_price BETWEEN '" . $price_from . "' AND '" . $price_to . "' AND product_status = 1 AND product_quantity > 0 " . $sortby . " LIMIT $begin,9";
-        $query_product_list = mysqli_query($mysqli, $sql_product_list);
+        $category_id = intval($_GET['category_id']);
+        $url_category = '&category_id=' . $category_id;
+        $where_conditions .= " AND product.product_category = '" . $category_id . "'";
     }
+
+    // Thêm điều kiện thương hiệu nếu có
+    if (isset($_GET['brand_id'])) {
+        $brand_id = intval($_GET['brand_id']);
+        $url_brand = '&brand_id=' . $brand_id;
+        $where_conditions .= " AND product.product_brand = '" . $brand_id . "'";
+    }
+
+    // Thực hiện truy vấn với JOIN phù hợp
+    $joins = "";
+    if (isset($_GET['category_id'])) {
+        $joins .= " JOIN category ON product.product_category = category.category_id";
+    }
+    if (isset($_GET['brand_id'])) {
+        $joins .= " JOIN brand ON product.product_brand = brand.brand_id";
+    }
+
+    $sql_product_list = "SELECT * FROM product $joins WHERE $where_conditions $sortby LIMIT $begin,9";
+    $query_product_list = mysqli_query($mysqli, $sql_product_list);
 } else {
     $url_price = '';
+
+    // Xây dựng điều kiện WHERE cho SQL
+    $where_conditions = "product_status = 1 AND product_quantity > 0";
+
+    // Xử lý URL tham số và bảo mật dữ liệu đầu vào
+    $url_category = '';
+    $url_brand = '';
+
+    // Thêm điều kiện danh mục nếu có
     if (isset($_GET['category_id'])) {
-        $url_brand = '';
-        $url_category = '&category_id=' . $_GET['category_id'];
-        $sql_product_list = "SELECT * FROM product JOIN category ON product.product_category = category.category_id WHERE product.product_category = '" . $_GET['category_id'] . "' AND product_status = 1 AND product_quantity > 0 " . $sortby . " LIMIT $begin,9";
-        $query_product_list = mysqli_query($mysqli, $sql_product_list);
-    } elseif (isset($_GET['brand_id'])) {
-        $url_category = '';
-        $url_brand = '&brand_id=' . $_GET['brand_id'];
-        $sql_product_list = "SELECT * FROM product JOIN brand ON product.product_brand = brand.brand_id WHERE product.product_brand = '" . $_GET['brand_id'] . "' AND product_status = 1 AND product_quantity > 0 " . $sortby . " LIMIT $begin,9";
-        $query_product_list = mysqli_query($mysqli, $sql_product_list);
-    } else {
-        $url_category = '';
-        $url_brand = '';
-        $sql_product_list = "SELECT * FROM product WHERE product_status = 1 AND product_quantity > 0 " . $sortby . " LIMIT $begin,9";
-        $query_product_list = mysqli_query($mysqli, $sql_product_list);
+        $category_id = intval($_GET['category_id']);
+        $url_category = '&category_id=' . $category_id;
+        $where_conditions .= " AND product.product_category = '" . $category_id . "'";
     }
+
+    // Thêm điều kiện thương hiệu nếu có
+    if (isset($_GET['brand_id'])) {
+        $brand_id = intval($_GET['brand_id']);
+        $url_brand = '&brand_id=' . $brand_id;
+        $where_conditions .= " AND product.product_brand = '" . $brand_id . "'";
+    }
+
+    // Thực hiện truy vấn với JOIN phù hợp
+    $joins = "";
+    if (isset($_GET['category_id'])) {
+        $joins .= " JOIN category ON product.product_category = category.category_id";
+    }
+    if (isset($_GET['brand_id'])) {
+        $joins .= " JOIN brand ON product.product_brand = brand.brand_id";
+    }
+
+    $sql_product_list = "SELECT * FROM product $joins WHERE $where_conditions $sortby LIMIT $begin,9";
+    $query_product_list = mysqli_query($mysqli, $sql_product_list);
 }
 ?>
 <div class="product-list">
@@ -291,31 +324,51 @@ if (isset($_GET['pricefrom']) && isset($_GET['priceto'])) {
                             <?php
                             $currentLink = $_SERVER['REQUEST_URI'];
                             if (isset($_GET['pricefrom']) && isset($_GET['priceto'])) {
-                                $price_from = $_GET['pricefrom'];
-                                $price_to = $_GET['priceto'];
+                                $price_from = floatval($_GET['pricefrom']);
+                                $price_to = floatval($_GET['priceto']);
+
+                                // Xây dựng điều kiện và JOIN cho đếm tổng số sản phẩm
+                                $count_where = "product_price > $price_from AND product_price < $price_to AND product_status = 1";
+                                $count_joins = "";
+
                                 if (isset($_GET['category_id'])) {
-                                    $sql_product_count = "SELECT * FROM product JOIN category ON product.product_category = category.category_id WHERE product.product_category = '" . $_GET['category_id'] . "' AND product_price > $price_from AND product_price < $price_to  AND product_status = 1";
-                                    $query_product_count = mysqli_query($mysqli, $sql_product_count);
-                                } elseif (isset($_GET['brand_id'])) {
-                                    $sql_product_count = "SELECT * FROM product JOIN brand ON product.product_brand = brand.brand_id WHERE product.product_brand = '" . $_GET['brand_id'] . "' AND product_price > $price_from AND product_price < $price_to  AND product_status = 1";
-                                    $query_product_count = mysqli_query($mysqli, $sql_product_count);
-                                } else {
-                                    $sql_product_count = "SELECT * FROM product WHERE product_price BETWEEN '" . $price_from . "' AND '" . $price_to . "' AND product_status = 1";
-                                    $query_product_count = mysqli_query($mysqli, $sql_product_count);
+                                    $category_id = intval($_GET['category_id']);
+                                    $count_where .= " AND product.product_category = '" . $category_id . "'";
+                                    $count_joins .= " JOIN category ON product.product_category = category.category_id";
                                 }
+
+                                if (isset($_GET['brand_id'])) {
+                                    $brand_id = intval($_GET['brand_id']);
+                                    $count_where .= " AND product.product_brand = '" . $brand_id . "'";
+                                    $count_joins .= " JOIN brand ON product.product_brand = brand.brand_id";
+                                }
+
+                                $sql_product_count = "SELECT COUNT(*) as total FROM product $count_joins WHERE $count_where";
+                                $query_product_count = mysqli_query($mysqli, $sql_product_count);
+                                $row_count_data = mysqli_fetch_assoc($query_product_count);
+                                $row_count = $row_count_data['total'];
                             } else {
+                                // Xây dựng điều kiện và JOIN cho đếm tổng số sản phẩm
+                                $count_where = "product_status = 1";
+                                $count_joins = "";
+
                                 if (isset($_GET['category_id'])) {
-                                    $sql_product_count = "SELECT * FROM product JOIN category ON product.product_category = category.category_id WHERE product.product_category = '" . $_GET['category_id'] . "' AND product_status = 1";
-                                    $query_product_count = mysqli_query($mysqli, $sql_product_count);
-                                } elseif (isset($_GET['brand_id'])) {
-                                    $sql_product_count = "SELECT * FROM product JOIN brand ON product.product_brand = brand.brand_id WHERE product.product_brand = '" . $_GET['brand_id'] . "' AND product_status = 1";
-                                    $query_product_count = mysqli_query($mysqli, $sql_product_count);
-                                } else {
-                                    $sql_product_count = "SELECT * FROM product  WHERE product_status = 1";
-                                    $query_product_count = mysqli_query($mysqli, $sql_product_count);
+                                    $category_id = intval($_GET['category_id']);
+                                    $count_where .= " AND product.product_category = '" . $category_id . "'";
+                                    $count_joins .= " JOIN category ON product.product_category = category.category_id";
                                 }
+
+                                if (isset($_GET['brand_id'])) {
+                                    $brand_id = intval($_GET['brand_id']);
+                                    $count_where .= " AND product.product_brand = '" . $brand_id . "'";
+                                    $count_joins .= " JOIN brand ON product.product_brand = brand.brand_id";
+                                }
+
+                                $sql_product_count = "SELECT COUNT(*) as total FROM product $count_joins WHERE $count_where";
+                                $query_product_count = mysqli_query($mysqli, $sql_product_count);
+                                $row_count_data = mysqli_fetch_assoc($query_product_count);
+                                $row_count = $row_count_data['total'];
                             }
-                            $row_count = mysqli_num_rows($query_product_count);
                             $totalpage = ceil($row_count / 9);
                             if ($row_count > 9) {
                             ?>
@@ -323,7 +376,7 @@ if (isset($_GET['pricefrom']) && isset($_GET['priceto'])) {
                                     <?php if ($page != 1) {
                                     ?>
                                         <li class="pagination__item">
-                                            <a class="d-flex align-center" href="<?php echo $currentLink ?>&pagenumber=<?php echo $page - 1 ?>">
+                                            <a class="d-flex align-center pagi-link" href="<?php echo $currentLink ?>&pagenumber=<?php echo $page - 1 ?>">
                                                 <img src="./assets/images/icon/arrow-left.svg" alt="">
                                             </a>
                                         </li>
@@ -333,11 +386,11 @@ if (isset($_GET['pricefrom']) && isset($_GET['priceto'])) {
                                     for ($i = 1; $i <= $totalpage; $i++) {
                                     ?>
                                         <li class="pagination__item">
-                                            <a class="pagination__anchor <?php if ($page == $i) {
-                                                                                echo "active";
-                                                                            } else {
-                                                                                echo "";
-                                                                            } ?>" href="<?php echo $currentLink ?>&pagenumber=<?php echo $i ?>"><?php echo $i ?></a>
+                                            <a class="pagination__anchor pagi-link <?php if ($page == $i) {
+                                                                                        echo "active";
+                                                                                    } else {
+                                                                                        echo "";
+                                                                                    } ?>" href="<?php echo $currentLink ?>&pagenumber=<?php echo $i ?>"><?php echo $i ?></a>
                                         </li>
                                     <?php
                                     }
@@ -345,7 +398,7 @@ if (isset($_GET['pricefrom']) && isset($_GET['priceto'])) {
                                     <?php if ($page != $totalpage) {
                                     ?>
                                         <li class="pagination__item">
-                                            <a class="d-flex align-center" href="<?php echo $currentLink ?>&pagenumber=<?php echo $page + 1 ?>">
+                                            <a class="d-flex align-center pagi-link" href="<?php echo $currentLink ?>&pagenumber=<?php echo $page + 1 ?>">
                                                 <img src="./assets/images/icon/icon-nextlink.svg" alt="">
                                             </a>
                                         </li>
@@ -361,7 +414,7 @@ if (isset($_GET['pricefrom']) && isset($_GET['priceto'])) {
                 <div class="row">
                     <div class="col">
                         <div class="text-center pd-top">
-                            <a class="btn btn__view--all btn__outline" href="index.php?page=products">Xem tất cả</a>
+                            <a class="btn btn__view--all btn__outline" href="javascript:void(0)">Xem tất cả</a>
                         </div>
                     </div>
                 </div>
@@ -376,12 +429,24 @@ if (isset($_GET['pricefrom']) && isset($_GET['priceto'])) {
         var inputMin = document.querySelector('.input-min').value;
         var inputMax = document.querySelector('.input-max').value;
         var btnFilter = document.querySelector('.btn__filter');
-        var link = currentURL + "&pricefrom=" + inputMin + "&priceto=" + inputMax;
-        console.log(link);
-        btnFilter.href = link;
+
+        // Tạo URL mới với tham số giá
+        var baseUrl = "index.php?page=products";
+
+        <?php if (isset($_GET['category_id'])) { ?>
+            baseUrl += "&category_id=<?php echo intval($_GET['category_id']); ?>";
+        <?php } ?>
+
+        <?php if (isset($_GET['brand_id'])) { ?>
+            baseUrl += "&brand_id=<?php echo intval($_GET['brand_id']); ?>";
+        <?php } ?>
+
+        <?php if (isset($_GET['pricesort'])) { ?>
+            baseUrl += "&pricesort=<?php echo $_GET['pricesort']; ?>";
+        <?php } ?>
+
+        baseUrl += "&pricefrom=" + inputMin + "&priceto=" + inputMax;
+        btnFilter.href = baseUrl;
     }
-    window.history.pushState(null, "", "index.php?page=products" + "<?php echo $url_category;
-                                                                    echo $url_brand;
-                                                                    echo $url_price;
-                                                                    echo $url_sort; ?>");
+    window.history.pushState(null, "", "index.php?page=products" + "<?php echo $url_category . $url_brand . $url_price . $url_sort; ?>");
 </script>

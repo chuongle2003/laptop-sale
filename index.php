@@ -62,6 +62,7 @@ require_once 'config-paypal.php';
   <script src="./assets/js/scrollsnap.js"></script>
   <script src="./assets/js/payment.js"></script>
   <script src="./assets/js/inputRange.js"></script>
+  <script src="./assets/js/product-filter.js"></script>
   <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <script src="https://kit.fontawesome.com/e63ed424f0.js" crossorigin="anonymous"></script>
